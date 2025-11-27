@@ -34,14 +34,21 @@ npm run dev
 | `npm run start` | Run production server |
 | `npm run lint` | ESLint (Next.js defaults) |
 
-### Supabase Setup
+### Supabase + Realtime Setup
 
-Database tables are defined in `context.md` (profiles, impulse_logs, xp_transactions, etc.). Once your Supabase project is ready:
+1. Create a Supabase project, then run `supabase/schema.sql` in the SQL editor. This adds tables, helper triggers, seed data, and registers the tables with the default realtime publication.
+2. Copy `.env.example` to `.env.local` and fill in:
+	- `NEXT_PUBLIC_SUPABASE_URL`
+	- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+	- `SUPABASE_SERVICE_ROLE_KEY` (needed if you later add server-side mutations)
+	- `NEXT_PUBLIC_DEMO_USER_ID` (defaults to the seeded demo user)
+3. Restart `npm run dev` so Next.js picks up env vars.
+4. The app now reads and writes through Supabase clients:
+	- `AppDataProvider` fetches profiles/stats/logs/xp/badges/leaderboard on mount
+	- Supabase Realtime subscriptions keep dashboard/rewards/history views in sync
+	- The impulse flow writes to `impulse_logs` + `xp_transactions` and relies on computed stats rows
 
-1. Create the tables via SQL editor (copy from context).
-2. Add URL + anon key to `.env.local`.
-3. (Optional) add `SUPABASE_SERVICE_ROLE_KEY` for server actions.
-4. Extend the mocked Zustand store with real Supabase queries when backend is ready.
+If env vars are missing, the provider gracefully falls back to the local demo data for offline demos.
 
 ### PWA Notes
 

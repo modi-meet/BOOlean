@@ -1,0 +1,26 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Anti-Impulse Defense System",
+    short_name: "AntiImpulse",
+    description:
+      "Psychology-powered PWA that helps you resist impulse purchases with nudges, XP, and rewards.",
+    start_url: "/dashboard",
+    display: "standalone",
+    background_color: "#0F172A",
+    theme_color: "#10B981",
+    icons: [
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+  };
+}
