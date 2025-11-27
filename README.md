@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Anti-Impulse Defense System
 
-## Getting Started
+Psychology-powered PWA that helps Gen Z/Millennials pause impulse purchases with playful questions, XP rewards, and streak pressure.
 
-First, run the development server:
+### Stack
+
+- Next.js 16 (App Router, PWA via `next-pwa`)
+- Tailwind CSS v4 + shadcn/ui primitives
+- Supabase (Auth + Postgres) client helpers
+- Zustand store for optimistic demo data
+- Recharts + Framer Motion for dopamine visuals
+
+### Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# app runs on http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Copy `.env.example` to `.env.local` and fill in Supabase keys.
+2. Start the dev server (`npm run dev`).
+3. Explore the flows:
+	- `/dashboard` – stats, charts, and recent impulse logs
+	- `/impulse/new` – multi-step impulse check wizard
+	- `/rewards`, `/leaderboard`, `/profile` – gamification + social layers
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Start local dev server |
+| `npm run build` | Production build with PWA artifacts |
+| `npm run start` | Run production server |
+| `npm run lint` | ESLint (Next.js defaults) |
 
-## Learn More
+### Supabase Setup
 
-To learn more about Next.js, take a look at the following resources:
+Database tables are defined in `context.md` (profiles, impulse_logs, xp_transactions, etc.). Once your Supabase project is ready:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create the tables via SQL editor (copy from context).
+2. Add URL + anon key to `.env.local`.
+3. (Optional) add `SUPABASE_SERVICE_ROLE_KEY` for server actions.
+4. Extend the mocked Zustand store with real Supabase queries when backend is ready.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### PWA Notes
 
-## Deploy on Vercel
+- `next-pwa` preconfigured (service worker disabled in dev).
+- `src/app/manifest.ts` + placeholder icons under `public/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Next Steps
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Wire Supabase auth into the `(auth)` routes.
+2. Replace Zustand demo data with Supabase fetches (RLS-safe selects + server actions).
+3. Implement notifications/delay reminders (Supabase functions or OneSignal).
+4. Add crypto reward mock once core loop is production-ready.
