@@ -1,17 +1,9 @@
--- Enable UUID helpers ------------------------------------------------------
+-- Enable UUID helpers
 create extension if not exists "uuid-ossp";
 
--- Profiles (extends Supabase auth.users) -----------------------------------
-create or replace function trigger_set_timestamp()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
+-- 1. Profiles (No auth linkage, just a table)
 create table if not exists public.profiles (
-  id uuid references auth.users not null primary key,
+  id uuid primary key, 
   name text,
   avatar_url text,
   age integer,
@@ -24,11 +16,7 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create trigger update_profiles_updated_at
-  before update on public.profiles
-  for each row execute procedure trigger_set_timestamp();
-
--- Impulse logs -------------------------------------------------------------
+-- 2. Impulse logs
 create table if not exists public.impulse_logs (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -46,7 +34,7 @@ create table if not exists public.impulse_logs (
 
 create index if not exists impulse_logs_user_idx on public.impulse_logs(user_id, created_at desc);
 
--- XP transactions ----------------------------------------------------------
+-- 3. XP transactions
 create table if not exists public.xp_transactions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -58,7 +46,7 @@ create table if not exists public.xp_transactions (
 
 create index if not exists xp_transactions_user_idx on public.xp_transactions(user_id, created_at desc);
 
--- User stats (cached aggregates) ------------------------------------------
+-- 4. User stats
 create table if not exists public.user_stats (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   total_xp integer default 0,
@@ -68,16 +56,12 @@ create table if not exists public.user_stats (
   total_spent_impulse numeric(10,2) default 0,
   impulses_resisted integer default 0,
   impulses_purchased integer default 0,
-  last_impulse_resist_date date,
+  last_impulse_resist_date timestamptz,
   shield_points integer default 0,
   updated_at timestamptz default now()
 );
 
-create trigger update_user_stats_updated_at
-  before update on public.user_stats
-  for each row execute procedure trigger_set_timestamp();
-
--- Badges -------------------------------------------------------------------
+-- 5. Badges
 create table if not exists public.badges (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
@@ -89,6 +73,7 @@ create table if not exists public.badges (
   tier text check (tier in ('bronze','silver','gold','platinum'))
 );
 
+-- 6. User badges
 create table if not exists public.user_badges (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles(id) on delete cascade,
@@ -97,7 +82,7 @@ create table if not exists public.user_badges (
   unique (user_id, badge_id)
 );
 
--- Friendships / leaderboard helpers ---------------------------------------
+-- 7. Friendships
 create table if not exists public.friendships (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles(id) on delete cascade,
@@ -107,16 +92,7 @@ create table if not exists public.friendships (
   unique (user_id, friend_id)
 );
 
-create table if not exists public.crypto_rewards (
-  id uuid primary key default uuid_generate_v4(),
-  user_id uuid references public.profiles(id) on delete cascade,
-  token_amount numeric(18,8),
-  xp_spent integer,
-  transaction_hash text,
-  claimed_at timestamptz default now()
-);
-
--- Leaderboard convenience view --------------------------------------------
+-- 8. Leaderboard View
 create or replace view public.leaderboard_view as
 select
   us.user_id,
@@ -128,14 +104,26 @@ select
 from public.user_stats us
 left join public.profiles p on p.id = us.user_id;
 
--- Realtime publication -----------------------------------------------------
-alter publication supabase_realtime add table
-  public.impulse_logs,
-  public.xp_transactions,
-  public.user_stats,
-  public.user_badges;
+-- Realtime publication
+alter publication supabase_realtime add table public.impulse_logs;
+alter publication supabase_realtime add table public.xp_transactions;
+alter publication supabase_realtime add table public.user_stats;
+alter publication supabase_realtime add table public.user_badges;
 
--- Demo seed (optional) -----------------------------------------------------
+-- RLS Policies - OPEN TO EVERYONE (No Auth Required)
+alter table public.profiles enable row level security;
+alter table public.impulse_logs enable row level security;
+alter table public.xp_transactions enable row level security;
+alter table public.user_stats enable row level security;
+alter table public.user_badges enable row level security;
+
+create policy "Public profiles access" on public.profiles for all using (true) with check (true);
+create policy "Public logs access" on public.impulse_logs for all using (true) with check (true);
+create policy "Public xp access" on public.xp_transactions for all using (true) with check (true);
+create policy "Public stats access" on public.user_stats for all using (true) with check (true);
+create policy "Public badges access" on public.user_badges for all using (true) with check (true);
+
+-- Seed Demo Data
 insert into public.profiles (id, name, avatar_url, age, income_type, monthly_income, monthly_expenses, city, city_tier)
 values
   ('00000000-0000-0000-0000-000000000001', 'Demo User', 'https://api.dicebear.com/8.x/thumbs/svg?seed=demo', 24, 'salary', 3000, 2000, 'Mumbai', 'tier1')
@@ -144,15 +132,4 @@ on conflict (id) do nothing;
 insert into public.user_stats (user_id, total_xp, current_streak, longest_streak, total_saved, total_spent_impulse, impulses_resisted, impulses_purchased, shield_points)
 values
   ('00000000-0000-0000-0000-000000000001', 2450, 15, 22, 2340, 240, 12, 3, 4)
-on conflict (user_id) do update set
-  total_xp = excluded.total_xp,
-  current_streak = excluded.current_streak,
-  longest_streak = excluded.longest_streak,
-  total_saved = excluded.total_saved,
-  total_spent_impulse = excluded.total_spent_impulse,
-  impulses_resisted = excluded.impulses_resisted,
-  impulses_purchased = excluded.impulses_purchased,
-  shield_points = excluded.shield_points;
-
--- Ensure the demo user can be referenced from the client via NEXT_PUBLIC_DEMO_USER_ID
-```
+on conflict (user_id) do nothing;

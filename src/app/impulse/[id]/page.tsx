@@ -16,7 +16,7 @@ export default async function ImpulseDetailPage({ params }: Props) {
   const hasSupabaseEnv = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (hasSupabaseEnv) {
     try {
-      const supabase = createServerSupabaseClient();
+      const supabase = await createServerSupabaseClient();
       const { data } = await supabase
         .from("impulse_logs")
         .select("*")

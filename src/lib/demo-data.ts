@@ -1,7 +1,7 @@
 import { Badge, ImpulseLog, LeaderboardEntry, Profile, UserStats, XPTransaction } from "@/types";
 
 export const demoProfile: Profile = {
-  id: "demo-user",
+  id: "00000000-0000-0000-0000-000000000001",
   name: "Demo User",
   age: 24,
   incomeType: "salary",
@@ -189,7 +189,7 @@ export const demoBadges: Badge[] = [
 export const demoLeaderboard: LeaderboardEntry[] = [
   { id: "alex", name: "Alex", xp: 3200, streak: 22, rank: 1 },
   { id: "sarah", name: "Sarah", xp: 2800, streak: 18, rank: 2 },
-  { id: "demo-user", name: "Demo User", xp: 2450, streak: 15, rank: 3 },
+  { id: "00000000-0000-0000-0000-000000000001", name: "Demo User", xp: 2450, streak: 15, rank: 3 },
   { id: "mike", name: "Mike", xp: 1900, streak: 12, rank: 4 },
   { id: "lisa", name: "Lisa", xp: 1600, streak: 9, rank: 5 },
 ];
